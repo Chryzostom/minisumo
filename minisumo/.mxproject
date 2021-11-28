@@ -7,8 +7,8 @@ HeaderPath=Drivers\STM32F4xx_HAL_Driver\Inc;Drivers\STM32F4xx_HAL_Driver\Inc\Leg
 CDefines=USE_HAL_DRIVER;STM32F401xC;USE_HAL_DRIVER;USE_HAL_DRIVER;
 
 [PreviousGenFiles]
-HeaderPath=G:/Mój dysk/studia/stm_przedmiot/minisumo/Inc
+HeaderPath=D:/programy/minisumo/Inc
 HeaderFiles=gpio.h;adc.h;dma.h;tim.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=G:/Mój dysk/studia/stm_przedmiot/minisumo/Src
+SourcePath=D:/programy/minisumo/Src
 SourceFiles=gpio.c;adc.c;dma.c;tim.c;stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;
 

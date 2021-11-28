@@ -40,10 +40,10 @@
 #define SW1 HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin)
 #define SW2 HAL_GPIO_ReadPin(SW2_GPIO_Port, SW2_Pin)
 #define SW3 HAL_GPIO_ReadPin(SW3_GPIO_Port, SW3_Pin)
-#define SF HAL_GPIO_ReadPin(SF_GPIO_Port, SF_Pin);
-#define SR HAL_GPIO_ReadPin(SR_GPIO_Port, SR_Pin);
-#define SL HAL_GPIO_ReadPin(SL_GPIO_Port, SL_Pin);
-#define START HAL_GPIO_ReadPin(START_GPIO_Port, START_Pin);
+#define SF HAL_GPIO_ReadPin(SF_GPIO_Port, SF_Pin)
+#define SR HAL_GPIO_ReadPin(SR_GPIO_Port, SR_Pin)
+#define SL HAL_GPIO_ReadPin(SL_GPIO_Port, SL_Pin)
+#define START HAL_GPIO_ReadPin(START_GPIO_Port, START_Pin)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,14 +54,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-u_int16_t odl[4];
-u_int16_t rs[4];
-
 uint32_t linia[2];
 u_int16_t ls[4];
 
 int takt = 1;
-int soft = 1;
 extern volatile int start;
 
 volatile int ust_D_P;
@@ -75,8 +71,6 @@ volatile int zad_V_P;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void config(VL53L0X_DEV Dev);
-void rsens(u_int16_t odl[]);
 void lsens(uint32_t linia[]);
 void led(int num);
 int wybor(int taktyka);
@@ -95,7 +89,6 @@ void lewy(void);
 void prawy(void);
 void bialaL();
 void zerujE();
-void rspomiar();
 void soft_start();
 /* USER CODE END PFP */
 
@@ -138,33 +131,9 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-//  //do wywalenia///
-//  HAL_ADC_Start_DMA(&hadc1, linia, 2); //działanie DMA
-//
-//  HAL_TIM_Encoder_Start_IT(&htim1, TIM_CHANNEL_ALL);
-//  HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL); //start enkodery
-//  stoj();
-//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2); //start pwm silnikow
-//  /////////////
-
-  while(1) //petla wyboru taktyki
-  {
-//	  przod();
-//	  zad_V_L=200;
-//	  zad_V_P=200;
-	  takt=wybor(takt);
-	  if(SW2==RESET)
-	  {
-		  start = 1;
-		  break;
-	  }
-  }
-
   //////////////////Inicjalizacja czujnikow i ustawianie adresow//////////////////
   led(1);
   stoj(); //silniki stan niski
-
 
   HAL_TIM_Encoder_Start_IT(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL); //start enkodery
@@ -173,7 +142,6 @@ int main(void)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2); //start pwm silnikow
 
   led(0); //koniec inicjalizacji
-  start = 1; //wywalic to!!!
   /////////////////////////////////////////////////////////////////////////////////
   /* USER CODE END 2 */
 
@@ -181,104 +149,56 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //rsens(odl);
-	  if(start == 1)
+	  if(START == 1)
 	  {
-//		  przod();
-//		  zad_V_L=150;
-//		  zad_V_P=150;
-//		  bialaL();
-//		  if(SW2 == RESET) start = 0;
-
-		  HAL_Delay(1000);
-		  taktyka3();
-		  start = 0;
+		  led(1);
+		  zerujE();
+		  if(SL == 1) // lewy widzi
+		  {
+			while(ust_D_L<12000 && ust_D_P<12000)
+			{
+				lewy();
+				zad_V_L = 450;
+				zad_V_P = 400;
+			}
+			zerujE();
+			bialaL();
+			stoj();
+		  }
+		  else if(SR == 1) //prawy widzi
+		  {
+			while(ust_D_L<12000 && ust_D_P<12000)
+			{
+				prawy();
+				zad_V_L = 400;
+				zad_V_P = 450;
+			}
+			zerujE();
+			bialaL();
+			stoj();
+		  }
+		  else if(SF == 1) //przod widzi
+		  {
+			  soft_start();
+			  bialaL();
+		  }
+		  else
+		  {
+			  prawy();
+			  zad_V_L = 400;
+			  zad_V_P = 450;
+			  bialaL();
+		  }
+		  zerujE();
 	  }
-	  else if(start == 0)
+	  else if(START == 0)
 	  {
-		  stoj();
-		  zad_V_L=0;
-		  zad_V_P=0;
-		  if(SW2 == RESET) start = 1;
+		led(0);
+		stoj();
+		zad_V_L = 0;
+		zad_V_P = 0;
+		bialaL();
 	  }
-
-//	  if(start==1)
-//	  {
-//		  zerujE();
-//		  rsens(odl);
-//		  if(rs[0]==1 && rs[1]==0) // lewy widzi
-//		  {
-//			stoj();
-//			while(ust_D_L<12000 && ust_D_P<12000)
-//			{
-//				lewy();
-//				zad_V_L = 350;
-//				zad_V_P = 300;
-//			}
-//			zerujE();
-//			bialaL();
-//			stoj();
-//			rsens(odl);
-//		  }
-//		  else if((rs[1]==1 || (rs[1]==1 && rs[0]==1)) && rs[2]==0) //lewy skos widzi wraz z lewym
-//		  {
-//			stoj();
-//			while(ust_D_L<6000 && ust_D_P<6000)
-//			{
-//				lewy();
-//				zad_V_L = 250;
-//				zad_V_P = 200;
-//			}
-//			zerujE();
-//			bialaL();
-//			stoj();
-//			rsens(odl);
-//		  }
-//		  else if((rs[3]==1 || (rs[3]==1 && rs[4]==1)) && rs[2]==0) //prawy skos widzi wraz z prawym
-//		  {
-//			stoj();
-//			while(ust_D_L<6000 && ust_D_P<6000)
-//			{
-//				prawy();
-//				zad_V_L = 200;
-//				zad_V_P = 250;
-//			}
-//			zerujE();
-//			stoj();
-//			bialaL();
-//			rsens(odl);
-//		  }
-//		  else if(rs[4]==1) //prawy widzi
-//		  {
-//			stoj();
-//			while(ust_D_L<12000 && ust_D_P<12000
-//					)
-//			{
-//				prawy();
-//				zad_V_L = 300;
-//				zad_V_P = 350;
-//			}
-//			zerujE();
-//			bialaL();
-//			stoj();
-//			rsens(odl);
-//		  }
-//		  else if(odl[2]<200) //krotko widzi
-//		  {
-//			  soft_start();
-//			  bialaL();
-//			  rsens(odl);
-//		  }
-//		  else
-//		  {
-//			stoj();
-//			zad_V_L = 0;
-//			zad_V_P = 0;
-//			bialaL();
-//			rsens(odl);
-//		  }
-//		  zerujE();
-//	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -408,18 +328,6 @@ void prawy(void)
 	LS_przod();
 }
 
-
-void rsens(u_int16_t odl[])
-{
-	rspomiar();
-	int i;
-	for(i=0;i<5;i++)
-	{
-		if(odl[i]<=400) rs[i]=1;
-		else rs[i]=0;
-	}
-}
-
 void lsens(uint32_t linia[])
 {
 	int i;
@@ -483,18 +391,8 @@ void zerujE()
 
 void soft_start()
 {
-//	if(soft==1)
-//	{
 		zerujE();
 		while(ust_D_L < 4000 && ust_D_P < 4000)
-		{
-			przod();
-			zad_V_L = 40;
-			zad_V_P = 40;
-		}
-		zerujE();
-
-		while(ust_D_L < 2000 && ust_D_P < 2000)
 		{
 			przod();
 			zad_V_L = 50;
@@ -513,20 +411,26 @@ void soft_start()
 		while(ust_D_L < 2000 && ust_D_P < 2000)
 		{
 			przod();
-			zad_V_L = 200;
-			zad_V_P = 200;
+			zad_V_L = 300;
+			zad_V_P = 300;
 		}
 		zerujE();
 
 		while(ust_D_L < 2000 && ust_D_P < 2000)
 		{
 			przod();
-			zad_V_L = 400;
-			zad_V_P = 400;
+			zad_V_L = 700;
+			zad_V_P = 700;
 		}
 		zerujE();
-		soft = 0;
-//	}
+
+		while(ust_D_L < 2000 && ust_D_P < 2000)
+		{
+			przod();
+			zad_V_L = 1000;
+			zad_V_P = 1000;
+		}
+		zerujE();
 }
 
 void bialaL()
