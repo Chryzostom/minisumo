@@ -1,2 +1,1 @@
 # minisumo
-# kody-do-nauki
